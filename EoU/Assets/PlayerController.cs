@@ -4,76 +4,70 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public float speed = 5;
-    public float sprintSpeed = 2;
+    public float speed = 5f;
+    public float sprintSpeed = 2f;
     public float slideSpeed = 0.5f;
-    public float slide = 1;
+    public float slide = 1f;
     public float gravity = 9.8f;
-    
 
     private Vector3 _moveVector;
     private CharacterController _characterController;
-    // Start is called before the first frame update
+    [SerializeField] private CameraController _cameraController;
+
     void Start()
     {
         _characterController = GetComponent<CharacterController>();
+        _cameraController = Camera.main.GetComponent<CameraController>();
         slideSpeed *= speed;
         sprintSpeed *= speed;
     }
 
-    // Update is called once per frame
     void Update()
     {
         _moveVector = Vector3.zero;
 
         if (Input.GetKey(KeyCode.W))
         {
-            _moveVector += transform.forward;
+            _moveVector += Vector3.forward;
         }
 
         if (Input.GetKey(KeyCode.S))
         {
-            _moveVector -= transform.forward;
+            _moveVector -= Vector3.forward;
         }
 
         if (Input.GetKey(KeyCode.D))
         {
-            _moveVector += transform.right;
+            _moveVector += Vector3.right;
         }
 
         if (Input.GetKey(KeyCode.A))
         {
-            _moveVector -= transform.right;
+            _moveVector -= Vector3.right;
         }
     }
+
     private void FixedUpdate()
     {
         if (_moveVector.magnitude > 0.1f)
         {
-            _moveVector = _moveVector.normalized;
-        }
+            _moveVector.Normalize();
+            Vector3 moveDirection = transform.TransformDirection(_moveVector);
 
-        else
-        {
-            _moveVector *= slide;
-
-            if (_moveVector.magnitude < 0.1f)
+            if (Input.GetKey(KeyCode.LeftShift))
             {
-                _moveVector = Vector3.zero;
+                _characterController.Move(moveDirection * slideSpeed * Time.fixedDeltaTime);
             }
-        }
-
-        if (Input.GetKey(KeyCode.LeftShift))
-        {
-            _characterController.Move(_moveVector * slideSpeed * Time.fixedDeltaTime);
-        }
-        else if(Input.GetKey(KeyCode.LeftControl))
-        {
-            _characterController.Move(_moveVector * sprintSpeed * Time.fixedDeltaTime);
-        }
-        else
-        {
-            _characterController.Move(_moveVector * speed * Time.fixedDeltaTime);
+            else if (Input.GetKey(KeyCode.LeftControl))
+            {
+                _characterController.Move(moveDirection * sprintSpeed * Time.fixedDeltaTime);
+                StartCoroutine(_cameraController.Shake(0.3f, 0.003f));
+            }
+            else
+            {
+                _characterController.Move(moveDirection * speed * Time.fixedDeltaTime);
+                StartCoroutine(_cameraController.Shake(0.1f, 0.001f));
+            }
         }
     }
 }
